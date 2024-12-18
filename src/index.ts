@@ -17,6 +17,6 @@ app.use(studentRouter)
 
 
 
-app.listen(process.env.port, () => {
+app.listen(process.env.PORT, () => {
     console.log("🚀 Server ready at: http://localhost:3000");
 });
