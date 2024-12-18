@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @db.VarChar(60)
+  email    String @unique @db.VarChar(60)
+  password String @db.VarChar(50)
+  age      Int?
+
+  token String?
+
+  enrollments Enrollment[]
+
+  //classes Class[] -> relaçao n-n que gera automatico sem opção de renomeação
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile     Profile?
+  assessments Assessment[]
+
+  @@map("students")
+}
+
+model Profile {
+  id        String    @id @default(uuid()) @db.Uuid
+  bio       String?   @db.VarChar(150)
+  image     String?   @db.VarChar(255)
+  birthDate DateTime?
+
+  studentId String @unique @db.Uuid //FK
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("profile")
+}
+
+model Assessment {
+  id         String  @id @default(uuid()) @db.Uuid
+  discipline String  @db.VarChar(60)
+  grade      Decimal @db.Decimal(4, 2)
+  studentId  String  @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("assessments")
+}
+
+// n-n
+
+model Class {
+  id          String @id @default(uuid()) @db.Uuid
+  program     String @db.VarChar(60)
+  edition     String @db.VarChar(60)
+  maxStudents Int?   @map("max_students")
+  minStudents Int?   @map("min_students")
+
+  //students Student[] -> relaçao n-n que gera automatico sem opção de renomeação
+
+  enrollments Enrollment[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("classes")
+}
+
+model Enrollment {
+  studentId String @default(uuid()) @map("student_id") @db.Uuid
+  classId   String @default(uuid()) @map("class_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+
+  @@id([studentId, classId])
+  @@map("enrollments")
+}
