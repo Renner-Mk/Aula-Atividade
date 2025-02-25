@@ -50,9 +50,7 @@ export class AssessmentController{
     public async store(req:Request, res:Response){
         try {
             const { studentId } = req.params
-
             const { discipline, grade } = req.body
-            const { authorization } = req.headers
 
             if(!discipline || !grade){
                 return res.status(400).json({
@@ -61,15 +59,6 @@ export class AssessmentController{
                     message: "Os campos 'dicipline' e 'grade' são obrigatorios."
                 })
             }
-
-            if(!authorization){
-                return res.status(401).json({
-                    success: false,
-                    code: res.statusCode,
-                    message: "Token não informado."
-                })
-            }
-            
 
             const student = await repository.student.findUnique({
                 where: {id: studentId},
@@ -80,14 +69,6 @@ export class AssessmentController{
                     success: false,
                     code: res.statusCode,
                     message: "Aluno não encontrado."
-                })
-            }
-
-            if(student.token !== authorization){
-                return res.status(401).json({
-                    success: false,
-                    code: res.statusCode,
-                    message: "Token invalido."
                 })
             }
 

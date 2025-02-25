@@ -1,68 +1,33 @@
 import { Request, Response } from "express";
-import { repository } from "../database/prisma.connection";
+import { AuthService } from "../services/auth.service";
+import { missingFieldError, serverError } from "../util/response.helpers";
 
-import { randomUUID } from "crypto";
+const authService = new AuthService()
 
 export class AuthController {
-    public async login(req:Request, res:Response){
-        try {
-            const {email, password} = req.body
+  public async login(request: Request, response: Response) {
+    try {
+      // entrada
+      const { email, password } = request.body
 
-            if(!email || !password){
-                return res.status(400).json({
-                    success: false,
-                    code: res.statusCode,
-                    message: "Todos os campos são obrigatorios"
-                })
-            }
+      if (!email || !password) {
+        return missingFieldError(response)
+      }
 
-            const student = await repository.student.findFirst({
-                where: {
-                    email, password
-                },
-                select:{
-                    id: true,
-                    name: true,
-                    age: true,
-                    email: true
-                }
-            })
+      const result = await authService.login({ email, password })
 
-            if(!student){
-                return res.status(401).json({
-                    success: false,
-                    code: res.statusCode,
-                    message: "Credenciais invalidas"
-                })
-            }
+      if (!result) {
+        // 401 - Unauthorized
+        return response.status(401).json({
+          success: false,
+          code: response.statusCode,
+          message: 'Credenciais inválidas.'
+        })
+      }
 
-            const token = randomUUID()
-
-            await repository.student.update({
-                where:{ id: student.id },
-                data:{
-                    token
-                }
-            })
-
-
-            return res.status(200).json({
-                success: true,
-                code: res.statusCode,
-                message: "Login efetuado com sucesso!",
-                data: {
-                    ...student,
-                    token
-                }
-            })
-
-
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                code: res.statusCode,
-                message: `Erro ao autenticar ${error}`
-            })
-        }
+      return response.status(result.code).json(result)
+    } catch (error) {
+      return serverError(response, error)
     }
+  }
 }

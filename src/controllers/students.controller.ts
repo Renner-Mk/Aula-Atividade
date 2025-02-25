@@ -2,26 +2,17 @@ import { Request, Response } from "express";
 
 import { repository } from '../database/prisma.connection'
 import { Student } from "../models/student.model";
+import { StudentService } from "../services/student.service";
 
+const studentService = new StudentService
 export class StudentController {
     //index -> lista todos os registros
     public async index(req: Request, res: Response) {
         try {
-            const students = await repository.student.findMany({
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    age: true,
-                }
-            })
+            const students = await studentService.getAllStudents()
     
-            return res.status(200).json({
-                success: true,
-                code: res.statusCode,
-                message: 'Alunos listados com sucesso',
-                data: students
-            })
+            return res.status(200).json(students)
+            
         } catch (error) {
             return res.status(500).json({
                 success: false,
@@ -33,7 +24,7 @@ export class StudentController {
     //store -> criar um novo registro
     public async store(req: Request, res: Response){
         try {
-            const {name, email, password, age} = req.body
+            const {name, email, password, age, type } = req.body
     
             if(!name || !email || !password){
                 return res.status(400).json({
@@ -55,31 +46,13 @@ export class StudentController {
                 })
             }
 
-            const newStudent = new Student(name, email, password, age)
+            const newStudent = new Student(name, email, password, age, type)
     
     
-            const createdStudent = await repository.student.create({
-                data:{
-                    id: newStudent.id,
-                    name: newStudent.name,
-                    email: newStudent.email,
-                    password: newStudent.password,
-                    age: newStudent.age
-                },
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    age: true,
-                }
-            })
+            const createdStudent = await studentService.createStudent(newStudent)
+            
     
-            return res.status(201).json({
-                success: true,
-                code: res.statusCode,
-                message: 'Aluno criado com sucesso',
-                data: createdStudent
-            })
+            return res.status(201).json(createdStudent)
     
         } catch (error) {
             return res.status(500).json({
@@ -94,27 +67,19 @@ export class StudentController {
         try {
             const { id } = req.params
     
-            const student = await repository.student.findUnique({
-                where: {id},
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    password: true,
-                    age: true
-                }
-            })
-    
-            if(!student){
-                return res.status(404).json({message: 'Aluno não encontrado'})
+            const student = await studentService.getStudentById(id)
+
+            if(!student) {
+                return res.status(404).json({
+                    success: false,
+                    code: res.statusCode,
+                    message: 'Aluno não encontrado'
+                })
             }
+            
     
-            return res.status(200).json({
-                success: true,
-                code: res.statusCode,
-                message: 'Alunos listados com sucesso',
-                data: student
-            })
+            return res.status(200).json(student)
+
         } catch (error) {
             return res.status(500).json({
                 success: false,
@@ -129,28 +94,17 @@ export class StudentController {
             const { id } = req.params
             const {name, email, password, age} = req.body
     
-            const updatedStudent = await repository.student.update({
-                where: {id},
-                data:{
+            const updatedStudent = await studentService.updateStudent(
+                {
+                    id,
                     name,
                     email,
                     password,
                     age
-                },
-                select:{
-                    id: true,
-                    name: true,
-                    email: true,
-                    age: true,
                 }
-            })
+            )
     
-            return res.status(200).json({
-                success: true,
-                code: res.statusCode,
-                message: 'aluno alualizado com sucesso',
-                data: updatedStudent
-            })
+            return res.status(200).json(updatedStudent)
     
         } catch (error) {
             return res.status(500).json({
@@ -165,25 +119,9 @@ export class StudentController {
         try {
             const { id } = req.params
             
-            const student = await repository.student.delete({
-                where: {
-                    id
-                },
-                select:{
-                    id: true,
-                    name: true,
-                    email: true,
-                    age: true
-                    
-                }
-            })
-    
-            return res.status(200).json({
-                success: true,
-                code: res.statusCode,
-                message: 'aluno deletado com sucesso',
-                data: student
-            })
+            const student = await studentService.deleteStudent(id)
+            
+            return res.status(200).json(student)
     
         } catch (error) {
             return res.status(500).json({
