@@ -1,22 +1,16 @@
-import express from "express";
-import cors from 'cors';
-import * as dotenv from 'dotenv'
+import * as dotenv from "dotenv";
 
-import authRouter from "./routes/auth.routes"
-import studentRouter from "./routes/students.routes"
+import swagger from "swagger-ui-express";
+import swaggerJSON from "./docs/swagger.json";
+import { createApp } from "./server";
 
-const app = express();
+dotenv.config();
 
-app.use(express.json());
-app.use(cors());
+const app = createApp();
 
-dotenv.config()
-
-app.use(authRouter)
-app.use(studentRouter)
-
-
+app.use("/docs", swagger.serve);
+app.use("/docs", swagger.setup(swaggerJSON));
 
 app.listen(process.env.PORT, () => {
-    console.log("🚀 Server ready at: http://localhost:3000");
+  console.log("🚀 Server ready at: http://localhost:3000");
 });
